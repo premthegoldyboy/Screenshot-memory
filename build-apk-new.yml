@@ -1,0 +1,60 @@
+name: Build Screenshot Memory APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download repository
+        uses: actions/checkout@v4
+
+      - name: Extract Android project
+        run: |
+          mkdir android-project
+          unzip -q screenshot-memory.zip -d android-project
+          echo "Extracted files:"
+          find android-project -maxdepth 2 -type f | head -100
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Create debug keystore
+        working-directory: android-project
+        run: |
+          rm -f debug.keystore
+          keytool -genkeypair \
+            -keystore debug.keystore \
+            -storepass android \
+            -keypass android \
+            -alias androiddebugkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Build debug APK
+        working-directory: android-project
+        run: |
+          gradle assembleDebug --no-daemon
+
+      - name: Find APK
+        run: |
+          find android-project -name "*.apk" -type f -print
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Screenshot-Memory-APK
+          path: android-project/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
