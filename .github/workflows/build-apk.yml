@@ -11,12 +11,45 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract Android project
+      - name: Locate latest AI Studio ZIP
+        shell: bash
         run: |
+          set -e
+
+          ZIP_FILE=$(find . -maxdepth 1 -type f -iname "*.zip" | head -n 1)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: No project ZIP found."
+            exit 1
+          fi
+
+          echo "Using project ZIP: $ZIP_FILE"
+
+          rm -rf android-project
           mkdir android-project
-          unzip -q 54 screenshot-memory-one.zip -d android-project
-          echo "Extracted files:"
-          find android-project -maxdepth 3 -type f | head -100
+
+          unzip -o "$ZIP_FILE" -d android-project
+
+          echo "=== EXTRACTED FILES ==="
+          find android-project -maxdepth 5 -type f | head -200
+
+      - name: Find Android project root
+        shell: bash
+        run: |
+          set -e
+
+          SETTINGS=$(find android-project -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) | head -n 1)
+
+          if [ -z "$SETTINGS" ]; then
+            echo "ERROR: Could not find settings.gradle or settings.gradle.kts"
+            echo "The downloaded ZIP does not appear to contain a normal Android project."
+            exit 1
+          fi
+
+          PROJECT_ROOT=$(dirname "$SETTINGS")
+
+          echo "Android project found at: $PROJECT_ROOT"
+          echo "PROJECT_ROOT=$PROJECT_ROOT" >> "$GITHUB_ENV"
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -26,35 +59,47 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.3.1'
 
-      - name: Create debug keystore
-        working-directory: android-project
+      - name: Make Gradle executable
+        shell: bash
         run: |
-          rm -f debug.keystore
-          keytool -genkeypair \
-            -keystore debug.keystore \
-            -storepass android \
-            -keypass android \
-            -alias androiddebugkey \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
+          chmod +x "$PROJECT_ROOT/gradlew" 2>/dev/null || true
 
       - name: Build debug APK
-        working-directory: android-project
+        shell: bash
         run: |
-          gradle assembleDebug --no-daemon
+          set -e
 
-      - name: Find APK
+          cd "$PROJECT_ROOT"
+
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleDebug --no-daemon
+          else
+            gradle assembleDebug --no-daemon
+          fi
+
+      - name: Find generated APK
+        shell: bash
         run: |
-          find android-project -name "*.apk" -type f -print
+          set -e
+
+          echo "=== SEARCHING FOR APK ==="
+
+          find "$PROJECT_ROOT" -type f -name "*.apk" -print
+
+          APK=$(find "$PROJECT_ROOT" -type f -path "*/build/outputs/apk/debug/*.apk" | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "ERROR: APK was not generated."
+            exit 1
+          fi
+
+          echo "APK FOUND: $APK"
+          echo "APK_PATH=$APK" >> "$GITHUB_ENV"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Screenshot-Memory-APK
-          path: android-project/**/build/outputs/apk/debug/*.apk
+          name: Screenshot-Memory-Final-APK
+          path: ${{ env.APK_PATH }}
           if-no-files-found: error
