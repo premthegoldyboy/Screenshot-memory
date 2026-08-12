@@ -28,7 +28,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
-                - name: Create debug keystore
+      
+      - name: Create debug keystore
         working-directory: android-project
         run: |
           rm -f debug.keystore
