@@ -27,11 +27,12 @@ android {
   productFlavors {
     create("prod") {
       dimension = "version"
+      applicationId = "com.aistudio.screenshotmemory.app"
       // Keeps the original app bundle ID for the installed app.
     }
     create("preview") {
       dimension = "version"
-      applicationIdSuffix = ".preview"
+      applicationId = "com.premthegoldyboy.screenshotmemory.preview"
     }
   }
 
