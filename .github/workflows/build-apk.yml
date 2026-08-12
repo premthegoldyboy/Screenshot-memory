@@ -14,7 +14,7 @@ jobs:
       - name: Extract Android project
         run: |
           mkdir android-project
-          unzip -q screenshot-memory.zip -d android-project
+          unzip -q 54 screenshot-memory-one.zip -d android-project
           echo "Extracted files:"
           find android-project -maxdepth 3 -type f | head -100
 
