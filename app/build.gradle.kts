@@ -61,6 +61,16 @@ android {
     }
     debug { signingConfig = signingConfigs.getByName("debugConfig") }
   }
+
+  androidComponents {
+    onVariants(selector().withName("previewDebug")) { variant ->
+      tasks.register("printPreviewDebugApplicationId") {
+        doLast {
+          println("previewDebug applicationId: ${variant.applicationId.get()}")
+        }
+      }
+    }
+  }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
