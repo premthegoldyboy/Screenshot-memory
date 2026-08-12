@@ -42,7 +42,6 @@ jobs:
 
           if [ -z "$SETTINGS" ]; then
             echo "ERROR: Could not find settings.gradle or settings.gradle.kts"
-            echo "The downloaded ZIP does not appear to contain a normal Android project."
             exit 1
           fi
 
@@ -59,6 +58,24 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Create debug keystore
+        shell: bash
+        run: |
+          set -e
+
+          keytool -genkeypair \
+            -keystore "$PROJECT_ROOT/debug.keystore" \
+            -storepass android \
+            -keypass android \
+            -alias androiddebugkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+          echo "Debug keystore created at:"
+          ls -l "$PROJECT_ROOT/debug.keystore"
 
       - name: Make Gradle executable
         shell: bash
@@ -102,4 +119,4 @@ jobs:
         with:
           name: Screenshot-Memory-Final-APK
           path: ${{ env.APK_PATH }}
-          if-no-files-found: error
+          if-no-files-found: error          
