@@ -1,0 +1,6 @@
+{
+  "name": "Screenshot Memory",
+  "description": "Automatically index, extract text via on-device OCR, and search your screenshots locally in natural language.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
