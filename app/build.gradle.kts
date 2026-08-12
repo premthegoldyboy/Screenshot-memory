@@ -23,6 +23,18 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  flavorDimensions += "version"
+  productFlavors {
+    create("prod") {
+      dimension = "version"
+      // Keeps the original app bundle ID for the installed app.
+    }
+    create("preview") {
+      dimension = "version"
+      applicationIdSuffix = ".preview"
+    }
+  }
+
   signingConfigs {
     create("release") {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
