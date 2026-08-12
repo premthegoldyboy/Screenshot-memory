@@ -16,14 +16,19 @@ jobs:
         run: |
           set -e
 
-          ZIP_FILE=$(find . -maxdepth 1 -type f -iname "*.zip" | head -n 1)
+          ZIP_FILE="./54 screenshot-memory (1).zip"
 
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: No project ZIP found."
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "ERROR: The 54-file AI Studio ZIP was not found:"
+            echo "$ZIP_FILE"
+            echo ""
+            echo "ZIP files currently in repository:"
+            find . -maxdepth 1 -type f -iname "*.zip" -print
             exit 1
           fi
 
-          echo "Using project ZIP: $ZIP_FILE"
+          echo "Using AI Studio project:"
+          echo "$ZIP_FILE"
 
           rm -rf android-project
           mkdir android-project
@@ -47,7 +52,9 @@ jobs:
 
           PROJECT_ROOT=$(dirname "$SETTINGS")
 
-          echo "Android project found at: $PROJECT_ROOT"
+          echo "Android project found at:"
+          echo "$PROJECT_ROOT"
+
           echo "PROJECT_ROOT=$PROJECT_ROOT" >> "$GITHUB_ENV"
 
       - name: Set up Java
@@ -74,8 +81,7 @@ jobs:
             -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-          echo "Debug keystore created at:"
-          ls -l "$PROJECT_ROOT/debug.keystore"
+          echo "Debug keystore created successfully."
 
       - name: Make Gradle executable
         shell: bash
@@ -111,7 +117,9 @@ jobs:
             exit 1
           fi
 
-          echo "APK FOUND: $APK"
+          echo "APK FOUND:"
+          echo "$APK"
+
           echo "APK_PATH=$APK" >> "$GITHUB_ENV"
 
       - name: Upload APK
@@ -119,4 +127,4 @@ jobs:
         with:
           name: Screenshot-Memory-Final-APK
           path: ${{ env.APK_PATH }}
-          if-no-files-found: error          
+          if-no-files-found: error
