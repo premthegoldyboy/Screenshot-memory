@@ -76,8 +76,19 @@ fun ScreenshotViewerScreen(
     val context = LocalContext.current
     val screenshot by viewModel.screenshot.collectAsStateWithLifecycle()
 
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
+    val animatedScale = remember { Animatable(1f) }
+val animatedOffsetX = remember { Animatable(0f) }
+val animatedOffsetY = remember { Animatable(0f) }
+
+var gestureScale by remember { mutableFloatStateOf(1f) }
+var gestureOffset by remember { mutableStateOf(Offset.Zero) }
+
+LaunchedEffect(Unit) {
+    animatedScale.snapTo(1f)
+    animatedOffsetX.snapTo(0f)
+    animatedOffsetY.snapTo(0f)
+}
+    
     var noteText by remember(screenshot?.id) { mutableStateOf(screenshot?.notes ?: "") }
     var tagText by remember(screenshot?.id) { mutableStateOf(screenshot?.tags ?: "") }
 
@@ -248,26 +259,57 @@ fun ScreenshotViewerScreen(
                     contentDescription = item.filename,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTransformGestures { _, pan, zoom, _ ->
-                                scale = (scale * zoom).coerceIn(1f, 5f)
-                                if (scale > 1f) {
-                                    offset = Offset(
-                                        x = offset.x + pan.x,
-                                        y = offset.y + pan.y
-                                    )
-                                } else {
-                                    offset = Offset.Zero
-                                }
-                            }
-                        }
-                        .graphicsLayer(
-                            scaleX = scale,
-                            scaleY = scale,
-                            translationX = offset.x,
-                            translationY = offset.y
-                        )
+    .fillMaxSize()
+    .pointerInput(Unit) {
+        detectTransformGestures { _, pan, zoom, _ ->
+
+            gestureScale = (gestureScale * zoom).coerceIn(1f, 5f)
+
+            if (gestureScale > 1f) {
+                gestureOffset = Offset(
+                    x = gestureOffset.x + pan.x,
+                    y = gestureOffset.y + pan.y
+                )
+
+                animatedScale.snapTo(gestureScale)
+                animatedOffsetX.snapTo(gestureOffset.x)
+                animatedOffsetY.snapTo(gestureOffset.y)
+            } else {
+                gestureScale = 1f
+                gestureOffset = Offset.Zero
+
+                animatedScale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                )
+
+                animatedOffsetX.animateTo(
+                    targetValue = 0f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                )
+
+                animatedOffsetY.animateTo(
+                    targetValue = 0f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                )
+            }
+        }
+    }
+    .graphicsLayer {
+        scaleX = animatedScale.value
+        scaleY = animatedScale.value
+        translationX = animatedOffsetX.value
+        translationY = animatedOffsetY.value
+    }
                 )
             }
         }
